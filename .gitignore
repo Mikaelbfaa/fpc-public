@@ -1,0 +1,5 @@
+# Ignore C compiled files
+*.exe
+
+# Igonre Java compiled files
+*.class
