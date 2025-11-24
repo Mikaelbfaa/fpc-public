@@ -9,7 +9,7 @@ mutex = Semaphore(1)
 intern_request = Semaphore(1)
 
 def externalRoute(req: str):
-    global extern_count, mutex, extern_request, intern_request, intern_count
+    global extern_count, mutex, extern_request
     
     extern_request.acquire()
     
@@ -17,15 +17,11 @@ def externalRoute(req: str):
 
     with mutex:
         extern_count += 1
-        if extern_count == 4 and intern_count == 1:
-            intern_request.release()
-            release_externs()
-            extern_count = 0
-            intern_count = 0
+        finalizeQuotaCycle()
     
 
 def internalRoute(req: str):
-    global extern_count, intern_request, extern_request, intern_count
+    global intern_request, intern_count, mutex
 
     intern_request.acquire()
 
@@ -33,12 +29,15 @@ def internalRoute(req: str):
     
     with mutex:
         intern_count += 1
+        finalizeQuotaCycle()
 
-        if intern_count == 1 and extern_count == 4:
-            intern_count = 0
-            extern_count = 0
-            release_externs()
-            intern_request.release()
+def finalizeQuotaCycle():
+    global intern_count, extern_count, intern_request
+    if intern_count == 1 and extern_count == 4:
+        intern_count = 0
+        extern_count = 0
+        release_externs()
+        intern_request.release()
 
 def release_externs():
     global extern_request
