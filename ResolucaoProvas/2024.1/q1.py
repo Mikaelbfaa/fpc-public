@@ -3,35 +3,42 @@ import time
 from threading import Semaphore, current_thread, Thread
 
 extern_count = 0
+intern_count = 0
 extern_request = Semaphore(4)
 mutex = Semaphore(1)
-intern_request = Semaphore(0)
+intern_request = Semaphore(1)
 
 def externalRoute(req: str):
-    global extern_count, mutex, extern_request, intern_request
+    global extern_count, mutex, extern_request, intern_request, intern_count
     
     extern_request.acquire()
+    
+    handle()
 
     with mutex:
         extern_count += 1
-        if extern_count == 4:
+        if extern_count == 4 and intern_count == 1:
             intern_request.release()
-    
-    handle()
+            release_externs()
+            extern_count = 0
+            intern_count = 0
     
 
 def internalRoute(req: str):
-    global extern_count, intern_request, extern_request
+    global extern_count, intern_request, extern_request, intern_count
 
     intern_request.acquire()
 
     handle()
     
     with mutex:
-        extern_count = 0
+        intern_count += 1
 
-    release_externs()
-
+        if intern_count == 1 and extern_count == 4:
+            intern_count = 0
+            extern_count = 0
+            release_externs()
+            intern_request.release()
 
 def release_externs():
     global extern_request
