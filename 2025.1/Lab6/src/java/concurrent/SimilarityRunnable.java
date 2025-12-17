@@ -56,6 +56,7 @@ public class SimilarityRunnable implements Runnable {
             for (Thread t : similarityThreads) {
                 t.join();
             }
+            
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
